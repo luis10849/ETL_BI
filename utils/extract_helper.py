@@ -126,8 +126,8 @@ def spotify_extract_info():
         #track_df['track_played_at'] = pd.to_datetime(track_df['track_played_at'])
         track_df['track_played_at'] = pd.to_datetime(
             track_df['track_played_at'])
-        track_df['track_played_at'] = track_df['track_played_at'].dt.strftime(
-            '%m/%d/%Y')
+        #track_df['track_played_at'] = track_df['track_played_at'].dt.strftime(
+        #    '%m/%d/%Y')
 
         # crear load data
         track_df['load_data'] = datetime.datetime.now()
@@ -138,23 +138,29 @@ def spotify_extract_info():
         track_df.to_csv('tracks.csv', index=False, header=True)
 
         # cargar data en excel
-        track_df.to_excel('tracks.xlsx', index=False, header=True)
+        #track_df.to_excel('tracks.xlsx', index=False, header=True)
 
         session = get_session()
 
         with session:
             session.begin()
             try:
-              for index, row in track_df.iterrows():
-                 new_track=Track(name=row["track_name"])
-                 session.add(new_track)
+                for index, row in track_df.iterrows():
+                    new_track = Track(
+                        name=row["track_name"], 
+                        url=row["track_url"], 
+                        popularity=row["track_popularity"], 
+                        duration_ms=row["track_duration_ms"], 
+                        played_at=row["track_played_at"],
+                        album_id=row["track_album_id"],
+                        track_id=row["track_id"],
+                        id_unique=row["id_unique"],)
+                    session.add(new_track)
             except:
-              session.rollback()
-              raise
+                session.rollback()
+                raise
             else:
-              session.commit()
-
-       
+                session.commit()
 
 
 spotify_extract_info()
