@@ -6,6 +6,12 @@ from IPython.display import display
 import datetime
 import hashlib
 from uuid import uuid4
+import logging
+
+from connect_database import get_session
+from models import Track
+
+logging.basicConfig(level=logging.DEBUG)
 
 # enviroment variables
 CLIENT_ID = config('CLIENT_ID')
@@ -87,7 +93,6 @@ def spotify_extract_info():
                 str(track_duration_ms) + \
                 str(track_album_id)
 
-        
             track_element = {
                 'track_id': track_id,
                 'track_name': track_name,
@@ -127,13 +132,29 @@ def spotify_extract_info():
         # crear load data
         track_df['load_data'] = datetime.datetime.now()
         track_df['load_data'] = track_df['load_data'].dt.strftime('%m/%d/%Y')
-        #track_df = track_df.drop_duplicates(subset=['id_unique'])
+        track_df = track_df.drop_duplicates(subset=['id_unique'])
 
         # cargar data en cvs
         track_df.to_csv('tracks.csv', index=False, header=True)
 
         # cargar data en excel
         track_df.to_excel('tracks.xlsx', index=False, header=True)
+
+        session = get_session()
+
+        with session:
+            session.begin()
+            try:
+              for index, row in track_df.iterrows():
+                 new_track=Track(name=row["track_name"])
+                 session.add(new_track)
+            except:
+              session.rollback()
+              raise
+            else:
+              session.commit()
+
+       
 
 
 spotify_extract_info()
